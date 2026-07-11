@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HSL Carton Cost Calculator — เครื่องคำนวณต้นทุนกล่องลูกฟูก</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#14213D;
+    --navy-light:#24365C;
+    --navy-pale:#E7EAF1;
+    --kraft:#A6754A;
+    --kraft-dark:#8B5E36;
+    --amber:#D98E3D;
+    --paper-bg:#EFEBE2;
+    --paper-bg-2:#F8F6F0;
+    --ink:#1C1C1A;
+    --ink-soft:#6B6B63;
+    --line:#D8D2C4;
+    --line-strong:#B9B09A;
+    --white:#FFFFFF;
+    --danger:#B3452C;
+    --success:#3F6E52;
+    --radius:4px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper-bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans Thai','IBM Plex Mono',sans-serif;
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+  .display{font-family:'Space Grotesk','IBM Plex Sans Thai',sans-serif;}
+
+  header.topbar{
+    background:var(--navy); color:var(--white); padding:22px 32px;
+    display:flex; align-items:center; justify-content:space-between; border-bottom:3px solid var(--kraft);
+  }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand-mark{
+    width:38px;height:38px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; color:var(--white); flex-shrink:0;
+  }
+  .brand-text h1{ font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; margin:0; letter-spacing:0.2px; }
+  .brand-text p{ margin:2px 0 0; font-size:12px; color:#B7C2D9; }
+  .topbar-tag{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#9FB0CE; text-align:right; line-height:1.6; display:none; }
+  @media(min-width:760px){ .topbar-tag{display:block;} }
+
+  .shell{ max-width:1180px; margin:0 auto; padding:28px 20px 80px; display:grid; grid-template-columns:1fr; gap:22px; }
+  @media(min-width:960px){ .shell{ grid-template-columns:1.28fr 1fr; align-items:start; } }
+
+  .panel{ background:var(--paper-bg-2); border:1px solid var(--line); border-radius:var(--radius); }
+  .panel + .panel{ margin-top:18px; }
+
+  .panel-head{ padding:14px 18px; border-bottom:1px solid var(--line); display:flex; align-items:baseline; gap:10px; }
+  .panel-head .idx{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--kraft-dark); border:1px solid var(--kraft); border-radius:2px; padding:1px 6px; }
+  .panel-head h2{ font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; margin:0; color:var(--navy); }
+  .panel-head .sub{ font-size:11.5px; color:var(--ink-soft); margin-left:auto; }
+  .panel-body{ padding:18px; }
+
+  .field-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .field-row.two{ grid-template-columns:repeat(2,1fr); }
+  @media(max-width:520px){ .field-row, .field-row.two{ grid-template-columns:1fr 1fr; } }
+
+  .field{ display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
+  .field label{ font-size:11.5px; color:var(--ink-soft); display:flex; justify-content:space-between; }
+  .field label .unit{ color:var(--line-strong); font-family:'IBM Plex Mono',monospace; }
+  .field input[type=number], .field input[type=text]{
+    font-family:'IBM Plex Mono',monospace; font-size:14px; padding:8px 10px;
+    border:1px solid var(--line-strong); border-radius:3px; background:var(--white); color:var(--ink); width:100%;
+  }
+  .field input:focus{ outline:none; border-color:var(--navy); box-shadow:0 0 0 2px var(--navy-pale); }
+  .field select{
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px; padding:7px 6px;
+    border:1px solid var(--line-strong); border-radius:3px; background:var(--white); color:var(--ink);
+  }
+
+  .cost-line{ display:grid; grid-template-columns:1fr 110px 108px; gap:10px; align-items:end; margin-bottom:10px; }
+  @media(max-width:520px){ .cost-line{ grid-template-columns:1fr; } }
+
+  .segmented{ display:flex; border:1px solid var(--line-strong); border-radius:3px; overflow:hidden; }
+  .segmented button{
+    flex:1; border:none; background:var(--white); color:var(--ink-soft);
+    font-family:'IBM Plex Sans Thai',sans-serif; font-size:12.5px; font-weight:500;
+    padding:10px 6px; cursor:pointer; border-right:1px solid var(--line); transition:background .15s,color .15s;
+  }
+  .segmented button:last-child{ border-right:none; }
+  .segmented button.active{ background:var(--navy); color:var(--white); }
+  .segmented.tri button{ font-size:11.8px; }
+
+  .checkbox-row{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-soft); margin:4px 0 14px; }
+  .checkbox-row input{ accent-color:var(--navy); }
+
+  .hint{ font-size:11.5px; color:var(--ink-soft); margin-top:-6px; margin-bottom:14px; }
+
+  .style-tag{
+    display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10.5px;
+    color:var(--kraft-dark); background:var(--navy-pale); border-radius:2px; padding:2px 7px; margin-bottom:12px;
+  }
+
+  /* ---------- Sheet row list (telescope) ---------- */
+  .sheet-row{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr auto;
+    gap:8px;
+    align-items:end;
+    margin-bottom:10px;
+    padding-bottom:10px;
+    border-bottom:1px dashed var(--line);
+  }
+  @media(max-width:600px){ .sheet-row{ grid-template-columns:1fr 1fr; } }
+  .sheet-row .field{ margin-bottom:0; }
+  .sheet-row .rm-btn{
+    height:36px; width:36px; border:1px solid var(--line-strong); background:var(--white);
+    color:var(--danger); border-radius:3px; cursor:pointer; font-size:15px; line-height:1;
+  }
+  .sheet-row .rm-btn:hover{ background:var(--danger); color:var(--white); }
+  .add-sheet-btn{
+    width:100%; padding:9px; border:1px dashed var(--line-strong); border-radius:3px;
+    background:var(--white); color:var(--navy); font-family:'IBM Plex Sans Thai',sans-serif;
+    font-size:12.5px; font-weight:500; cursor:pointer; margin-top:2px;
+  }
+  .add-sheet-btn:hover{ background:var(--navy-pale); }
+  .sheet-area-tag{
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-soft);
+    align-self:center; padding-bottom:8px; white-space:nowrap;
+  }
+
+  .flute-diagram-wrap{ background:var(--white); border:1px solid var(--line); border-radius:3px; padding:14px 16px 10px; margin-bottom:16px; }
+  .flute-diagram-wrap .caption{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-soft); display:flex; justify-content:space-between; margin-top:6px; }
+
+  .sticky{ position:sticky; top:20px; }
+
+  .price-hero{ background:var(--navy); color:var(--white); border-radius:var(--radius); padding:22px 20px; position:relative; overflow:hidden; }
+  .price-hero::before{ content:""; position:absolute; right:-30px; top:-30px; width:140px;height:140px; border:2px solid rgba(217,142,61,0.25); border-radius:50%; }
+  .price-hero .eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--amber); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+  .price-hero .big{ font-family:'Space Grotesk',sans-serif; font-size:38px; font-weight:700; line-height:1.1; }
+  .price-hero .big span{ font-size:16px; font-weight:500; color:#B7C2D9; }
+  .price-hero .row2{ display:flex; gap:22px; margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.18); flex-wrap:wrap; }
+  .price-hero .row2 .item .label{ font-size:11px; color:#9FB0CE; margin-bottom:3px; }
+  .price-hero .row2 .item .val{ font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:600; }
+
+  table.breakdown{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.breakdown td{ padding:8px 4px; border-bottom:1px solid var(--line); }
+  table.breakdown tr:last-child td{ border-bottom:none; }
+  table.breakdown td.amt{ text-align:right; font-family:'IBM Plex Mono',monospace; white-space:nowrap; }
+  table.breakdown tr.subtotal td{ font-weight:600; border-top:1px solid var(--line-strong); }
+  table.breakdown tr.total td{ font-weight:700; color:var(--navy); font-size:13.5px; border-top:2px solid var(--navy); }
+  table.breakdown td.dim{ color:var(--ink-soft); }
+  table.breakdown td.small{ font-size:11px; color:var(--ink-soft); }
+
+  .swatch{ display:inline-block; width:8px;height:8px; border-radius:1px; margin-right:7px; vertical-align:middle; }
+
+  .note-box{ font-size:11.5px; color:var(--ink-soft); background:var(--navy-pale); border-left:3px solid var(--navy); padding:10px 12px; border-radius:2px; margin-top:14px; }
+
+  footer{ max-width:1180px; margin:0 auto; padding:0 20px 40px; font-size:11px; color:var(--line-strong); font-family:'IBM Plex Mono',monospace; text-align:center; }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
+
+  /* ---------- Action bar (print / export) ---------- */
+  .action-bar{
+    display:flex; gap:10px; margin-bottom:16px;
+  }
+  .action-btn{
+    flex:1; display:flex; align-items:center; justify-content:center; gap:7px;
+    padding:11px 12px; border-radius:3px; cursor:pointer;
+    font-family:'IBM Plex Sans Thai',sans-serif; font-size:13px; font-weight:600;
+    border:1px solid var(--navy); transition:background .15s,color .15s;
+  }
+  .action-btn.primary{ background:var(--navy); color:var(--white); }
+  .action-btn.primary:hover{ background:var(--navy-light); }
+  .action-btn.outline{ background:var(--white); color:var(--navy); }
+  .action-btn.outline:hover{ background:var(--navy-pale); }
+  .action-btn svg{ width:14px; height:14px; flex-shrink:0; }
+
+  @media print{
+    body{ background:var(--white); }
+    header.topbar{ background:var(--navy) !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .action-bar, .add-sheet-btn, .rm-btn, footer{ display:none !important; }
+    .shell{ display:block; padding:10px 0; max-width:100%; }
+    .panel{ break-inside:avoid; border:1px solid #999; }
+    .price-hero{ -webkit-print-color-adjust:exact; print-color-adjust:exact; break-inside:avoid; }
+    .sticky{ position:static; }
+    .segmented button{ border:1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">HSL</div>
+    <div class="brand-text">
+      <h1>Carton Cost Calculator</h1>
+      <p>เครื่องคำนวณต้นทุนกล่องลูกฟูก &amp; ราคาขายแนะนำ</p>
+    </div>
+  </div>
+  <div class="topbar-tag">RSC · กล่องต่อ (TELESCOPE) · DIE-CUT<br>SPEC-BASED PRICING TOOL</div>
+</header>
+
+<div class="shell">
+
+  <!-- ===================== LEFT: INPUTS ===================== -->
+  <div class="left-col">
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="idx">01</span>
+        <h2>ขนาดกล่อง</h2>
+        <span class="sub">หน่วย: มม. (อ้างอิงสินค้า)</span>
+      </div>
+      <div class="panel-body">
+        <div class="field-row">
+          <div class="field">
+            <label>ยาว (L) <span class="unit">mm</span></label>
+            <input type="number" id="dimL" value="400" min="1">
+          </div>
+          <div class="field">
+            <label>กว้าง (W) <span class="unit">mm</span></label>
+            <input type="number" id="dimW" value="300" min="1">
+          </div>
+          <div class="field">
+            <label>สูง (H) <span class="unit">mm</span></label>
+            <input type="number" id="dimH" value="250" min="1">
+          </div>
+        </div>
+        <div class="field-row two">
+          <div class="field">
+            <label>จำนวนสั่งผลิต <span class="unit">ใบ</span></label>
+            <input type="number" id="qty" value="5000" min="1" step="1">
+          </div>
+          <div class="field">
+            <label>รูปแบบกล่อง (อ้างอิง)</label>
+            <input type="text" id="styleLabel" value="RSC — Regular Slotted Container" disabled style="color:var(--ink-soft);background:var(--paper-bg);">
+          </div>
+        </div>
+        <div class="hint" style="margin-bottom:0;">ขนาด L/W/H ใช้อ้างอิงเท่านั้น สำหรับกล่องต่อและ Die-Cut ระบบจะคำนวณค่ากระดาษจากขนาดแผ่นที่ระบุในหมวด 02 โดยตรง</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="idx">02</span>
+        <h2>รูปแบบกล่อง &amp; ขนาดแผ่น</h2>
+        <span class="sub">Box Style &amp; Sheet Size</span>
+      </div>
+      <div class="panel-body">
+
+        <div class="field" style="margin-bottom:14px;">
+          <label>รูปแบบโครงสร้างกล่อง</label>
+          <div class="segmented tri" id="boxStyleSeg">
+            <button type="button" class="active" data-style="rsc">RSC (ชิ้นเดียว)</button>
+            <button type="button" data-style="telescope">กล่องต่อ (ฝา+ก้น)</button>
+            <button type="button" data-style="diecut">Die-Cut</button>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:14px;">
+          <label>ชนิดลอนกระดาษ</label>
+          <div class="segmented" id="fluteSeg">
+            <button type="button" class="active" data-flute="3">3 ชั้น — Single Wall</button>
+            <button type="button" data-flute="5">5 ชั้น — Double Wall</button>
+          </div>
+        </div>
+
+        <div class="flute-diagram-wrap">
+          <div id="fluteSvgHolder"></div>
+          <div class="caption">
+            <span id="fluteCaptionLeft">Single Wall — Liner / Flute / Liner</span>
+            <span id="fluteCaptionRight" class="mono">t ≈ 3 mm</span>
+          </div>
+        </div>
+
+        <div class="field-row two">
+          <div class="field">
+            <label>ความหนากระดาษ <span class="unit">mm</span></label>
+            <input type="number" id="boardThk" value="3" step="0.1" min="0.1">
+          </div>
+          <div class="field">
+            <label>ราคากระดาษ <span class="unit">บาท/ตร.ม.</span></label>
+            <input type="number" id="paperPrice" value="14.5" step="0.1" min="0">
+          </div>
+        </div>
+
+        <!-- ============ RSC fields ============ -->
+        <div id="rscFields">
+          <span class="style-tag">RSC — คำนวณขนาดแผ่นจากขนาดกล่องอัตโนมัติ (1 แผ่น/กล่อง)</span>
+          <div class="field-row two">
+            <div class="field">
+              <label>รอยต่อกาว (Glue Flap) <span class="unit">mm</span></label>
+              <input type="number" id="glueFlap" value="35" step="1" min="0">
+            </div>
+            <div class="field">
+              <label>ระยะเผื่อรอยพับ (Trim) <span class="unit">mm</span></label>
+              <input type="number" id="trimAllow" value="6" step="1" min="0">
+            </div>
+          </div>
+          <div class="checkbox-row">
+            <input type="checkbox" id="manualSheet">
+            <label for="manualSheet">ระบุขนาดแผ่นเอง (ไม่คำนวณจากขนาดกล่องอัตโนมัติ)</label>
+          </div>
+          <div class="field-row two" id="manualSheetFields" style="display:none;">
+            <div class="field">
+              <label>ความยาวแผ่น (Sheet Length) <span class="unit">mm</span></label>
+              <input type="number" id="manLen" value="1470" step="1" min="1">
+            </div>
+            <div class="field">
+              <label>ความกว้างแผ่น (Sheet Width) <span class="unit">mm</span></label>
+              <input type="number" id="manWid" value="556" step="1" min="1">
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ Telescope (กล่องต่อ) fields — direct multi-sheet input ============ -->
+        <div id="telescopeFields" style="display:none;">
+          <span class="style-tag">กล่องต่อ (Telescope) — ระบุขนาดแผ่นกระดาษที่ใช้จริงทีละแผ่น (มากกว่า 1 แผ่น/กล่อง)</span>
+          <div id="telescopeSheetList"></div>
+          <button type="button" class="add-sheet-btn" id="addSheetBtn">+ เพิ่มแผ่นกระดาษ</button>
+          <div class="hint" style="margin-top:10px;">แต่ละแผ่นคือชิ้นส่วนกระดาษ 1 ชิ้นที่ประกอบเป็นกล่อง 1 ใบ (เช่น ก้นกล่อง + ฝาครอบ) ระบบจะรวมพื้นที่ทุกแผ่นเพื่อคิดค่ากระดาษต่อกล่อง</div>
+        </div>
+
+        <!-- ============ Die-Cut fields — direct sheet size input ============ -->
+        <div id="diecutFields" style="display:none;">
+          <span class="style-tag">Die-Cut — คำนวณค่ากระดาษจากขนาดแผ่นที่ระบุโดยตรง</span>
+          <div class="field-row two">
+            <div class="field">
+              <label>ขนาดแผ่นกระดาษ ยาว <span class="unit">mm</span></label>
+              <input type="number" id="dcSheetLen" value="850" step="1" min="1">
+            </div>
+            <div class="field">
+              <label>ขนาดแผ่นกระดาษ กว้าง <span class="unit">mm</span></label>
+              <input type="number" id="dcSheetWid" value="600" step="1" min="1">
+            </div>
+          </div>
+          <div class="field-row two">
+            <div class="field">
+              <label>จำนวนใบที่ตัดได้ต่อแผ่นนี้ <span class="unit">ใบ</span></label>
+              <input type="number" id="numberUp" value="1" step="1" min="1">
+            </div>
+            <div class="field">
+              <label>ค่าบล็อกไดคัท (รวม) <span class="unit">บาท</span></label>
+              <input type="number" id="dieBlockCost" value="8000" step="100" min="0">
+            </div>
+          </div>
+          <div class="hint">ถ้า 1 แผ่นตัดได้กล่องเดียว ให้ใส่จำนวนใบ/แผ่น = 1 (คิดตามขนาดแผ่นเต็ม) หากวางไดคัทซ้อนหลายใบต่อแผ่น ให้ระบุจำนวนที่ตัดได้จริง · ค่าบล็อกไดคัทเป็นต้นทุน setup ครั้งเดียว ระบบหารเฉลี่ยตามจำนวนสั่งผลิตให้อัตโนมัติ</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="idx">03</span>
+        <h2>ต้นทุนแปรรูป</h2>
+        <span class="sub">Processing Costs</span>
+      </div>
+      <div class="panel-body">
+
+        <div class="cost-line">
+          <div class="field" style="margin-bottom:0;"><label>ค่าพิมพ์ (Printing)</label><input type="number" id="cPrint" value="1.2" step="0.01" min="0"></div>
+          <div class="field" style="margin-bottom:0;"><label>&nbsp;</label>
+            <select id="uPrint"><option value="box">บาท/ใบ</option><option value="k">บาท/1,000 ใบ</option></select>
+          </div>
+          <div class="field" style="margin-bottom:0;"><label>&nbsp;</label><div class="mono" style="padding:8px 0;color:var(--ink-soft);font-size:12px;">ต่อกล่อง</div></div>
+        </div>
+
+        <div class="cost-line">
+          <div class="field" style="margin-bottom:0;"><label>ค่าไดคัท (Die-cut Run)</label><input type="number" id="cDiecut" value="0.9" step="0.01" min="0"></div>
+          <div class="field" style="margin-bottom:0;">
+            <select id="uDiecut"><option value="box">บาท/ใบ</option><option value="k">บาท/1,000 ใบ</option></select>
+          </div>
+          <div class="field" style="margin-bottom:0;"></div>
+        </div>
+
+        <div class="cost-line">
+          <div class="field" style="margin-bottom:0;"><label>ค่ากาว (Gluing)</label><input type="number" id="cGlue" value="0.35" step="0.01" min="0"></div>
+          <div class="field" style="margin-bottom:0;">
+            <select id="uGlue"><option value="box">บาท/ใบ</option><option value="k">บาท/1,000 ใบ</option></select>
+          </div>
+          <div class="field" style="margin-bottom:0;"></div>
+        </div>
+
+        <div class="cost-line">
+          <div class="field" style="margin-bottom:0;"><label>ค่าแรงงาน (Labor)</label><input type="number" id="cLabor" value="0.8" step="0.01" min="0"></div>
+          <div class="field" style="margin-bottom:0;">
+            <select id="uLabor"><option value="box">บาท/ใบ</option><option value="k">บาท/1,000 ใบ</option></select>
+          </div>
+          <div class="field" style="margin-bottom:0;"></div>
+        </div>
+
+        <div class="cost-line">
+          <div class="field" style="margin-bottom:0;"><label>ค่าขนส่ง (Transport)</label><input type="number" id="cTransport" value="0.6" step="0.01" min="0"></div>
+          <div class="field" style="margin-bottom:0;">
+            <select id="uTransport"><option value="box">บาท/ใบ</option><option value="k">บาท/1,000 ใบ</option></select>
+          </div>
+          <div class="field" style="margin-bottom:0;"></div>
+        </div>
+
+        <div class="field-row two" style="margin-top:6px;">
+          <div class="field">
+            <label>ค่าโสหุ้ย (Overhead) <span class="unit">%</span></label>
+            <input type="number" id="overheadPct" value="8" step="0.5" min="0">
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <div class="hint" style="margin:8px 0 0;">คิดจากยอดรวม กระดาษ+พิมพ์+ไดคัท+กาว+แรงงาน (+บล็อกไดคัทเฉลี่ย ถ้าเป็น Die-Cut)</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="idx">04</span>
+        <h2>วิธีตั้งราคาขาย</h2>
+        <span class="sub">Pricing Method</span>
+      </div>
+      <div class="panel-body">
+        <div class="field" style="margin-bottom:14px;">
+          <div class="segmented" id="priceModeSeg">
+            <button type="button" class="active" data-mode="markup">Markup — บวกจากต้นทุน</button>
+            <button type="button" data-mode="margin">Margin — % กำไรจากราคาขาย</button>
+          </div>
+        </div>
+        <div class="field-row two">
+          <div class="field">
+            <label id="pctLabel">Markup <span class="unit">%</span></label>
+            <input type="number" id="pricePct" value="20" step="0.5" min="0">
+          </div>
+        </div>
+        <div class="hint" id="priceModeHint" style="margin-top:2px;">ราคาขาย = ต้นทุนรวม × (1 + Markup%)</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===================== RIGHT: OUTPUT ===================== -->
+  <div class="right-col">
+    <div class="sticky">
+
+      <div class="action-bar">
+        <button type="button" class="action-btn primary" id="btnPrint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          พิมพ์ / Print
+        </button>
+        <button type="button" class="action-btn outline" id="btnExportCsv">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+      </div>
+
+      <div class="price-hero">
+        <div class="eyebrow">ราคาขายแนะนำ / กล่อง</div>
+        <div class="big mono"><span>฿</span> <span id="outPricePerBox">0.00</span></div>
+        <div class="row2">
+          <div class="item">
+            <div class="label">ราคา / 1,000 ใบ</div>
+            <div class="val mono">฿<span id="outPricePerK">0</span></div>
+          </div>
+          <div class="item">
+            <div class="label">มูลค่ารวมตามจำนวนสั่งผลิต</div>
+            <div class="val mono">฿<span id="outOrderValue">0</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:16px;">
+        <div class="panel-head">
+          <span class="idx">05</span>
+          <h2>ผลลัพธ์ขนาดแผ่น</h2>
+        </div>
+        <div class="panel-body">
+          <table class="breakdown" id="sheetResultTable">
+            <tr><td class="dim" id="sheetRowLabel1">ขนาดแผ่น (ยาว × กว้าง)</td><td class="amt mono" id="outSheetSize">— × — mm</td></tr>
+            <tr><td class="dim" id="sheetRowLabel2">พื้นที่กระดาษ / ใบ</td><td class="amt mono" id="outArea">0.000 ตร.ม.</td></tr>
+          </table>
+          <div id="sheetDetailList" style="margin-top:4px;"></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:16px;">
+        <div class="panel-head">
+          <span class="idx">06</span>
+          <h2>รายละเอียดต้นทุน / กล่อง</h2>
+        </div>
+        <div class="panel-body">
+          <table class="breakdown" id="breakdownTable">
+            <tr><td><span class="swatch" style="background:var(--kraft);"></span>กระดาษ</td><td class="amt mono" id="bPaper">0.00</td></tr>
+            <tr><td><span class="swatch" style="background:var(--navy);"></span>พิมพ์</td><td class="amt mono" id="bPrint">0.00</td></tr>
+            <tr><td><span class="swatch" style="background:var(--navy-light);"></span>ไดคัท (run)</td><td class="amt mono" id="bDiecut">0.00</td></tr>
+            <tr id="rowDieBlock" style="display:none;"><td><span class="swatch" style="background:var(--danger);"></span>บล็อกไดคัท (เฉลี่ย)</td><td class="amt mono" id="bDieBlock">0.00</td></tr>
+            <tr><td><span class="swatch" style="background:var(--amber);"></span>กาว</td><td class="amt mono" id="bGlue">0.00</td></tr>
+            <tr><td><span class="swatch" style="background:var(--kraft-dark);"></span>แรงงาน</td><td class="amt mono" id="bLabor">0.00</td></tr>
+            <tr class="subtotal"><td>ต้นทุนการผลิต (Subtotal)</td><td class="amt mono" id="bSubtotal">0.00</td></tr>
+            <tr><td><span class="swatch" style="background:var(--ink-soft);"></span>โสหุ้ย</td><td class="amt mono" id="bOverhead">0.00</td></tr>
+            <tr><td><span class="swatch" style="background:var(--success);"></span>ขนส่ง</td><td class="amt mono" id="bTransport">0.00</td></tr>
+            <tr class="total"><td>ต้นทุนรวม / กล่อง</td><td class="amt mono" id="bTotalCost">0.00</td></tr>
+          </table>
+          <div class="note-box" id="marginNote">กำไรต่อกล่อง ฿0.00 · อัตรากำไรขั้นต้น 0.0%</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<footer>HSL CARTONS — INTERNAL BD TOOL · ตัวเลขที่คำนวณได้เป็นค่าประมาณสำหรับใช้อ้างอิงภายใน โปรดตรวจสอบกับต้นทุนจริงก่อนเสนอราคาลูกค้า</footer>
+
+<script>
+(function(){
+  var els = {};
+  ['dimL','dimW','dimH','qty','boardThk','glueFlap','trimAllow','paperPrice',
+   'manualSheet','manLen','manWid',
+   'dcSheetLen','dcSheetWid','numberUp','dieBlockCost',
+   'cPrint','uPrint','cDiecut','uDiecut','cGlue','uGlue','cLabor','uLabor','cTransport','uTransport',
+   'overheadPct','pricePct'].forEach(function(id){ els[id] = document.getElementById(id); });
+
+  var state = { flute: 3, priceMode: 'markup', boxStyle: 'rsc', sheetRowSeq: 0 };
+
+  var styleNames = {
+    rsc: 'RSC — Regular Slotted Container',
+    telescope: 'กล่องต่อ (Telescope — ฝา+ก้น)',
+    diecut: 'Die-Cut — กล่องรูปทรงพิเศษ'
+  };
+
+  // ---------- Telescope sheet-row list ----------
+  var sheetListEl = document.getElementById('telescopeSheetList');
+
+  function addSheetRow(label, len, wid){
+    state.sheetRowSeq++;
+    var rowId = 'sheetRow_' + state.sheetRowSeq;
+    var row = document.createElement('div');
+    row.className = 'sheet-row';
+    row.id = rowId;
+    row.innerHTML =
+      '<div class="field">' +
+        '<label>ชื่อแผ่น</label>' +
+        '<input type="text" class="sheetLabel" value="'+label+'">' +
+      '</div>' +
+      '<div class="field">' +
+        '<label>ยาว <span class="unit">mm</span></label>' +
+        '<input type="number" class="sheetLen" value="'+len+'" step="1" min="1">' +
+      '</div>' +
+      '<div class="field">' +
+        '<label>กว้าง <span class="unit">mm</span></label>' +
+        '<input type="number" class="sheetWid" value="'+wid+'" step="1" min="1">' +
+      '</div>' +
+      '<button type="button" class="rm-btn" title="ลบแผ่นนี้">×</button>';
+
+    row.querySelector('.rm-btn').addEventListener('click', function(){
+      if(sheetListEl.querySelectorAll('.sheet-row').length <= 1) return;
+      row.remove();
+      calculate();
+    });
+    row.querySelectorAll('input').forEach(function(inp){
+      inp.addEventListener('input', calculate);
+      inp.addEventListener('change', calculate);
+    });
+
+    sheetListEl.appendChild(row);
+  }
+
+  document.getElementById('addSheetBtn').addEventListener('click', function(){
+    var n = sheetListEl.querySelectorAll('.sheet-row').length + 1;
+    addSheetRow('แผ่นที่ ' + n, 500, 350);
+    calculate();
+  });
+
+  // preset 2 rows: base + lid
+  addSheetRow('ก้นกล่อง', 550, 400);
+  addSheetRow('ฝาครอบ', 570, 420);
+
+  // ---------- Box style segmented control ----------
+  var styleButtons = document.querySelectorAll('#boxStyleSeg button');
+  styleButtons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      styleButtons.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      state.boxStyle = btn.getAttribute('data-style');
+      document.getElementById('styleLabel').value = styleNames[state.boxStyle];
+
+      document.getElementById('rscFields').style.display = state.boxStyle === 'rsc' ? 'block' : 'none';
+      document.getElementById('telescopeFields').style.display = state.boxStyle === 'telescope' ? 'block' : 'none';
+      document.getElementById('diecutFields').style.display = state.boxStyle === 'diecut' ? 'block' : 'none';
+
+      document.getElementById('rowDieBlock').style.display = state.boxStyle === 'diecut' ? 'table-row' : 'none';
+
+      calculate();
+    });
+  });
+
+  // ---------- Flute segmented control ----------
+  var fluteButtons = document.querySelectorAll('#fluteSeg button');
+  fluteButtons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      fluteButtons.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      state.flute = parseInt(btn.getAttribute('data-flute'), 10);
+      els.boardThk.value = state.flute === 3 ? 3 : 7;
+      renderFluteDiagram();
+      calculate();
+    });
+  });
+
+  // ---------- Price mode segmented control ----------
+  var priceButtons = document.querySelectorAll('#priceModeSeg button');
+  var pctLabel = document.getElementById('pctLabel');
+  var priceModeHint = document.getElementById('priceModeHint');
+  priceButtons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      priceButtons.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      state.priceMode = btn.getAttribute('data-mode');
+      if(state.priceMode === 'markup'){
+        pctLabel.innerHTML = 'Markup <span class="unit">%</span>';
+        priceModeHint.textContent = 'ราคาขาย = ต้นทุนรวม × (1 + Markup%)';
+      } else {
+        pctLabel.innerHTML = 'Margin <span class="unit">%</span>';
+        priceModeHint.textContent = 'ราคาขาย = ต้นทุนรวม ÷ (1 − Margin%)';
+      }
+      calculate();
+    });
+  });
+
+  // ---------- Manual sheet toggle (RSC only) ----------
+  var manualCk = document.getElementById('manualSheet');
+  var manualFields = document.getElementById('manualSheetFields');
+  manualCk.addEventListener('change', function(){
+    manualFields.style.display = manualCk.checked ? 'grid' : 'none';
+    calculate();
+  });
+
+  // ---------- Flute diagram (SVG signature element) ----------
+  function renderFluteDiagram(){
+    var holder = document.getElementById('fluteSvgHolder');
+    var capL = document.getElementById('fluteCaptionLeft');
+    var capR = document.getElementById('fluteCaptionRight');
+    var navy = '#14213D', kraft = '#A6754A', line = '#D8D2C4';
+
+    var svg = '<svg viewBox="0 0 400 '+(state.flute===3?110:150)+'" width="100%" height="'+(state.flute===3?90:120)+'" xmlns="http://www.w3.org/2000/svg">';
+    var y = 14;
+    var liner = function(yy){ return '<rect x="10" y="'+yy+'" width="380" height="8" fill="'+navy+'"/>'; };
+    var flute = function(yy){
+      var d = 'M 10 '+(yy+8);
+      var segs = 20, step = 380/segs;
+      for(var i=0;i<segs;i++){
+        var xMid = 10+step*i+step/2;
+        var xEnd = 10+step*(i+1);
+        var yPeak = (i%2===0) ? yy : yy+16;
+        d += ' Q '+xMid+' '+yPeak+' '+xEnd+' '+(yy+8);
+      }
+      return '<path d="'+d+'" fill="none" stroke="'+kraft+'" stroke-width="3"/>';
+    };
+
+    svg += liner(y); y += 8;
+    svg += flute(y); y += 16;
+    svg += liner(y); y += 8;
+    if(state.flute === 5){
+      svg += flute(y); y += 16;
+      svg += liner(y); y += 8;
+    }
+    svg += '<line x1="10" y1="'+(y+14)+'" x2="390" y2="'+(y+14)+'" stroke="'+line+'" stroke-width="1"/>';
+    svg += '<line x1="10" y1="'+(y+8)+'" x2="10" y2="'+(y+20)+'" stroke="'+line+'" stroke-width="1"/>';
+    svg += '<line x1="390" y1="'+(y+8)+'" x2="390" y2="'+(y+20)+'" stroke="'+line+'" stroke-width="1"/>';
+    svg += '<text x="200" y="'+(y+30)+'" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#6B6B63">cross-section</text>';
+    svg += '</svg>';
+
+    holder.innerHTML = svg;
+    capL.textContent = state.flute === 3 ? 'Single Wall — Liner / Flute / Liner' : 'Double Wall — Liner / Flute / Liner / Flute / Liner';
+    capR.textContent = 't ≈ ' + els.boardThk.value + ' mm';
+  }
+
+  // ---------- Cost unit resolution ----------
+  function perBox(valueId, unitId){
+    var v = parseFloat(document.getElementById(valueId).value) || 0;
+    var u = document.getElementById(unitId).value;
+    return u === 'k' ? v/1000 : v;
+  }
+
+  function fmt(n){ return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+  function fmt0(n){ return n.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0}); }
+
+  // ---------- Sheet area calculation per box style ----------
+  function computeSheet(){
+    var L = parseFloat(els.dimL.value) || 0;
+    var W = parseFloat(els.dimW.value) || 0;
+
+    document.getElementById('sheetDetailList').innerHTML = '';
+
+    if(state.boxStyle === 'rsc'){
+      var glueFlap = parseFloat(els.glueFlap.value) || 0;
+      var trim = parseFloat(els.trimAllow.value) || 0;
+      var H = parseFloat(els.dimH.value) || 0;
+      var sheetLen, sheetWid;
+      if(manualCk.checked){
+        sheetLen = parseFloat(document.getElementById('manLen').value) || 0;
+        sheetWid = parseFloat(document.getElementById('manWid').value) || 0;
+      } else {
+        sheetLen = 2*(L+W) + glueFlap;
+        sheetWid = W + H + trim;
+      }
+      return {
+        area: (sheetLen*sheetWid)/1000000,
+        label1: 'ขนาดแผ่น (ยาว × กว้าง)',
+        value1: fmt0(sheetLen) + ' × ' + fmt0(sheetWid) + ' mm',
+        label2: 'พื้นที่กระดาษ / ใบ',
+        value2: ((sheetLen*sheetWid)/1000000).toFixed(4) + ' ตร.ม.'
+      };
+    }
+
+    if(state.boxStyle === 'telescope'){
+      var rows = sheetListEl.querySelectorAll('.sheet-row');
+      var totalArea = 0;
+      var detailHtml = '<table class="breakdown">';
+      rows.forEach(function(row){
+        var lbl = row.querySelector('.sheetLabel').value || 'แผ่น';
+        var ln = parseFloat(row.querySelector('.sheetLen').value) || 0;
+        var wd = parseFloat(row.querySelector('.sheetWid').value) || 0;
+        var a = (ln*wd)/1000000;
+        totalArea += a;
+        detailHtml += '<tr><td class="small">'+lbl+' ('+fmt0(ln)+'×'+fmt0(wd)+' mm)</td><td class="amt mono small">'+a.toFixed(4)+' ตร.ม.</td></tr>';
+      });
+      detailHtml += '</table>';
+      document.getElementById('sheetDetailList').innerHTML = detailHtml;
+
+      return {
+        area: totalArea,
+        label1: 'จำนวนแผ่น/กล่อง',
+        value1: rows.length + ' แผ่น',
+        label2: 'พื้นที่กระดาษรวม / ใบ',
+        value2: totalArea.toFixed(4) + ' ตร.ม.'
+      };
+    }
+
+    // diecut — direct sheet size input
+    var dcLen = parseFloat(els.dcSheetLen.value) || 0;
+    var dcWid = parseFloat(els.dcSheetWid.value) || 0;
+    var nUp = Math.max(1, parseFloat(els.numberUp.value) || 1);
+    var sheetArea = (dcLen*dcWid)/1000000;
+    var areaPerBox = sheetArea / nUp;
+
+    return {
+      area: areaPerBox,
+      label1: 'ขนาดแผ่น ÷ จำนวนใบ/แผ่น',
+      value1: fmt0(dcLen)+' × '+fmt0(dcWid)+' mm  ÷  '+nUp,
+      label2: 'พื้นที่กระดาษ / ใบ',
+      value2: areaPerBox.toFixed(4) + ' ตร.ม.'
+    };
+  }
+
+  // ---------- Main calculation ----------
+  function calculate(){
+    var qty = parseFloat(els.qty.value) || 0;
+    var paperPrice = parseFloat(els.paperPrice.value) || 0;
+
+    var sheet = computeSheet();
+    document.getElementById('sheetRowLabel1').textContent = sheet.label1;
+    document.getElementById('outSheetSize').textContent = sheet.value1;
+    document.getElementById('sheetRowLabel2').textContent = sheet.label2;
+    document.getElementById('outArea').textContent = sheet.value2;
+
+    var costPaper = sheet.area * paperPrice;
+    var costPrint = perBox('cPrint','uPrint');
+    var costDiecut = perBox('cDiecut','uDiecut');
+    var costGlue = perBox('cGlue','uGlue');
+    var costLabor = perBox('cLabor','uLabor');
+    var costTransport = perBox('cTransport','uTransport');
+
+    var costDieBlock = 0;
+    if(state.boxStyle === 'diecut'){
+      var blockTotal = parseFloat(els.dieBlockCost.value) || 0;
+      costDieBlock = qty > 0 ? blockTotal / qty : 0;
+    }
+
+    var subtotal = costPaper + costPrint + costDiecut + costGlue + costLabor + costDieBlock;
+    var overheadPct = parseFloat(els.overheadPct.value) || 0;
+    var overhead = subtotal * (overheadPct/100);
+    var totalCost = subtotal + overhead + costTransport;
+
+    var pct = parseFloat(els.pricePct.value) || 0;
+    var sellPrice;
+    if(state.priceMode === 'markup'){
+      sellPrice = totalCost * (1 + pct/100);
+    } else {
+      var denom = 1 - (pct/100);
+      sellPrice = denom > 0 ? totalCost / denom : totalCost;
+    }
+
+    var profit = sellPrice - totalCost;
+    var grossMarginPct = sellPrice > 0 ? (profit/sellPrice)*100 : 0;
+
+    document.getElementById('bPaper').textContent = fmt(costPaper);
+    document.getElementById('bPrint').textContent = fmt(costPrint);
+    document.getElementById('bDiecut').textContent = fmt(costDiecut);
+    document.getElementById('bDieBlock').textContent = fmt(costDieBlock);
+    document.getElementById('bGlue').textContent = fmt(costGlue);
+    document.getElementById('bLabor').textContent = fmt(costLabor);
+    document.getElementById('bSubtotal').textContent = fmt(subtotal);
+    document.getElementById('bOverhead').textContent = fmt(overhead);
+    document.getElementById('bTransport').textContent = fmt(costTransport);
+    document.getElementById('bTotalCost').textContent = fmt(totalCost);
+
+    document.getElementById('outPricePerBox').textContent = fmt(sellPrice);
+    document.getElementById('outPricePerK').textContent = fmt0(sellPrice*1000);
+    document.getElementById('outOrderValue').textContent = fmt0(sellPrice*qty);
+
+    document.getElementById('marginNote').textContent =
+      'กำไรต่อกล่อง ฿' + fmt(profit) + ' · อัตรากำไรขั้นต้น ' + grossMarginPct.toFixed(1) + '%';
+
+    renderFluteDiagram();
+  }
+
+  // bind all static inputs
+  document.querySelectorAll('input, select').forEach(function(el){
+    el.addEventListener('input', calculate);
+    el.addEventListener('change', calculate);
+  });
+
+  // ---------- Print ----------
+  document.getElementById('btnPrint').addEventListener('click', function(){
+    window.print();
+  });
+
+  // ---------- Export CSV ----------
+  function csvEscape(v){
+    v = String(v);
+    if(/[",\n]/.test(v)) v = '"' + v.replace(/"/g,'""') + '"';
+    return v;
+  }
+
+  function exportCsv(){
+    var rows = [];
+    rows.push(['หัวข้อ','ค่า']);
+    rows.push(['รูปแบบกล่อง', document.getElementById('styleLabel').value]);
+    rows.push(['ขนาดกล่อง L x W x H (mm)', els.dimL.value+' x '+els.dimW.value+' x '+els.dimH.value]);
+    rows.push(['จำนวนสั่งผลิต (ใบ)', els.qty.value]);
+    rows.push(['ชนิดลอน', state.flute+' ชั้น']);
+    rows.push(['ความหนากระดาษ (mm)', els.boardThk.value]);
+    rows.push(['ราคากระดาษ (บาท/ตร.ม.)', els.paperPrice.value]);
+    rows.push(['']);
+    rows.push([document.getElementById('sheetRowLabel1').textContent, document.getElementById('outSheetSize').textContent]);
+    rows.push([document.getElementById('sheetRowLabel2').textContent, document.getElementById('outArea').textContent]);
+
+    if(state.boxStyle === 'telescope'){
+      sheetListEl.querySelectorAll('.sheet-row').forEach(function(row){
+        var lbl = row.querySelector('.sheetLabel').value || 'แผ่น';
+        var ln = row.querySelector('.sheetLen').value;
+        var wd = row.querySelector('.sheetWid').value;
+        rows.push(['  แผ่น: '+lbl, ln+' x '+wd+' mm']);
+      });
+    }
+
+    rows.push(['']);
+    rows.push(['รายการต้นทุน','บาท / กล่อง']);
+    rows.push(['กระดาษ', document.getElementById('bPaper').textContent]);
+    rows.push(['พิมพ์', document.getElementById('bPrint').textContent]);
+    rows.push(['ไดคัท (run)', document.getElementById('bDiecut').textContent]);
+    if(state.boxStyle === 'diecut'){
+      rows.push(['บล็อกไดคัท (เฉลี่ย)', document.getElementById('bDieBlock').textContent]);
+    }
+    rows.push(['กาว', document.getElementById('bGlue').textContent]);
+    rows.push(['แรงงาน', document.getElementById('bLabor').textContent]);
+    rows.push(['ต้นทุนการผลิต (Subtotal)', document.getElementById('bSubtotal').textContent]);
+    rows.push(['โสหุ้ย', document.getElementById('bOverhead').textContent]);
+    rows.push(['ขนส่ง', document.getElementById('bTransport').textContent]);
+    rows.push(['ต้นทุนรวม / กล่อง', document.getElementById('bTotalCost').textContent]);
+    rows.push(['']);
+    rows.push(['ราคาขายแนะนำ / กล่อง', document.getElementById('outPricePerBox').textContent]);
+    rows.push(['ราคาขาย / 1,000 ใบ', document.getElementById('outPricePerK').textContent]);
+    rows.push(['มูลค่ารวมตามจำนวนสั่งผลิต', document.getElementById('outOrderValue').textContent]);
+    rows.push([document.getElementById('marginNote').textContent, '']);
+
+    var csv = rows.map(function(r){ return r.map(csvEscape).join(','); }).join('\r\n');
+    var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var ts = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = 'hsl-carton-cost-' + ts + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  document.getElementById('btnExportCsv').addEventListener('click', exportCsv);
+
+  renderFluteDiagram();
+  calculate();
+})();
+</script>
+
+</body>
+</html>
